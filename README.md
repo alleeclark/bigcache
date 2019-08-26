@@ -163,6 +163,10 @@ However hard max size in bigcache also can be set, check [HardMaxCacheSize](http
 
 This package also includes an easily deployable HTTP implementation of BigCache, which can be found in the [server](/server) package.
 
+## TTRPC Server
+
+This package also includes an easily deployable TTRPC implementation of BigCache, which can be found in the [server](/ttrpc) package.
+
 ## More
 
 Bigcache genesis is described in allegro.tech blog post: [writing a very fast cache service in Go](http://allegro.tech/2016/03/writing-fast-cache-service-in-go.html)
