@@ -12,6 +12,9 @@ import (
 	"os"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/sirupsen/logrus"
 
@@ -34,15 +37,15 @@ var (
 )
 
 func init() {
-	flag.BoolVar(&config.Verbose, "v", false, "Verbose logging.")
-	flag.IntVar(&config.Shards, "shards", 1024, "Number of shards for the cache.")
-	flag.IntVar(&config.MaxEntriesInWindow, "maxInWindow", 1000*10*60, "Used only in initial memory allocation.")
-	flag.DurationVar(&config.LifeWindow, "lifetime", 100000*100000*60, "Lifetime of each cache object.")
-	flag.IntVar(&config.HardMaxCacheSize, "max", 8192, "Maximum amount of data in the cache in MB.")
-	flag.IntVar(&config.MaxEntrySize, "maxShardEntrySize", 500, "The maximum size of each object stored in a shard. Used only in initial memory allocation.")
-	flag.IntVar(&port, "port", 9090, "The port to listen on.")
-	flag.StringVar(&logfile, "logfile", "", "Location of the logfile.")
-	flag.BoolVar(&ver, "version", false, "Print server version.")
+	flag.BoolVar(&config.Verbose, "v", false, "verbose logging.")
+	flag.IntVar(&config.Shards, "shards", 1024, "number of shards for the cache.")
+	flag.IntVar(&config.MaxEntriesInWindow, "maxInWindow", 1000*10*60, "used only in initial memory allocation.")
+	flag.DurationVar(&config.LifeWindow, "lifetime", 100000*100000*60, "lifetime of each cache object.")
+	flag.IntVar(&config.HardMaxCacheSize, "max", 8192, "maximum amount of data in the cache in MB.")
+	flag.IntVar(&config.MaxEntrySize, "maxShardEntrySize", 500, "the maximum size of each object stored in a shard. Used only in initial memory allocation.")
+	flag.IntVar(&port, "port", 9090, "the port to listen on.")
+	flag.StringVar(&logfile, "logfile", "", "location of the logfile.")
+	flag.BoolVar(&ver, "version", false, "print server version.")
 }
 
 func main() {
@@ -100,7 +103,7 @@ func (s bigcacheServer) Put(ctx context.Context, r *rpccache.PutRequest) (*empty
 		return nil, errors.New("ErrInputKeyNotFound")
 	}
 	if err := cache.Set(r.Key, []byte(r.Value)); err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, (err).Error())
 	}
 	return nil, nil
 }
@@ -108,9 +111,9 @@ func (s bigcacheServer) Put(ctx context.Context, r *rpccache.PutRequest) (*empty
 func (s bigcacheServer) Delete(ctx context.Context, r *rpccache.DeleteRequest) (*empty.Empty, error) {
 	if err := cache.Delete(r.Key); err != nil {
 		if strings.Contains((err).Error(), "not found") {
-			return nil, errors.New("ErrDoesNotExist")
+			return nil, status.Error(codes.NotFound, (err).Error())
 		}
-		return nil, err
+		return nil, status.Error(codes.Internal, "Error removing the key")
 	}
 	return nil, nil
 }
@@ -120,9 +123,9 @@ func (s bigcacheServer) Get(ctx context.Context, r *rpccache.GetRequest) (*rpcca
 	if err != nil {
 		errMsg := (err).Error()
 		if strings.Contains(errMsg, "not found") {
-			return nil, errors.New("ErrDoesNotExist")
+			return nil, status.Error(codes.NotFound, errMsg)
 		}
-		return nil, err
+		return nil, status.Error(codes.Internal, errMsg)
 	}
 	return &rpccache.GetResponse{Value: entry}, nil
 }
