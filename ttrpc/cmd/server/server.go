@@ -5,7 +5,6 @@ import (
 	rpccache "bigcache/ttrpc"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -100,7 +99,7 @@ type bigcacheServer struct{}
 
 func (s bigcacheServer) Put(ctx context.Context, r *rpccache.PutRequest) (*empty.Empty, error) {
 	if r.Key == "" {
-		return nil, errors.New("ErrInputKeyNotFound")
+		return nil, status.Error(codes.FailedPrecondition, "ErrInputKeyNotFound")
 	}
 	if err := cache.Set(r.Key, []byte(r.Value)); err != nil {
 		return nil, status.Error(codes.Internal, (err).Error())
